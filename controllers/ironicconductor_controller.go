@@ -302,6 +302,29 @@ func (r *IronicConductorReconciler) reconcileServices(
 		}
 		// create route - end
 
+		// // Create the host network pod to proxy in DHCP, TFTP to the conductor pod
+		// hostNetPod := ironicconductor.HostNetPod(instance, &conductorPod)
+		// op, err := controllerutil.CreateOrPatch(ctx, r.Client, hostNetPod, func() error {
+		// 	hostNetPod.Spec.Containers[0].Image = instance.Spec.ContainerImage
+		// 	err := controllerutil.SetControllerReference(instance, hostNetPod, r.Scheme)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	return nil
+		// })
+
+		// if err != nil {
+		// 	//FIXME: error conditions
+		// 	return ctrl.Result{}, err
+		// }
+
+		// if op != controllerutil.OperationResultNone {
+		// 	util.LogForObject(
+		// 		helper,
+		// 		fmt.Sprintf("Pod %s successfully reconciled - operation: %s", hostNetPod.Name, string(op)),
+		// 		instance,
+		// 	)
+		// }
 	}
 
 	//

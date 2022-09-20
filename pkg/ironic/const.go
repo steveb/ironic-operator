@@ -36,6 +36,8 @@ const (
 	HttpbootComponent = "httpboot"
 	// HttpbootComponent
 	DhcpComponent = "dhcp"
+	// HostNetComponent
+	HostNetComponent = "host-net"
 	// APIComponent
 	APIComponent = "api"
 )

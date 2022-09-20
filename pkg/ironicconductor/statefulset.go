@@ -108,18 +108,29 @@ func StatefulSet(
 		//
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
 		//
-		// Make a POST request to the JSON-RPC port
+		// // Make a POST request to the JSON-RPC port
+		// livenessProbe.Exec = &corev1.ExecAction{
+		// 	Command: []string{
+		// 		"/usr/bin/curl", "-v", "-X", "POST", "localhost:8089", "-d",
+		// 		"{\"jsonrpc\": \"2.0\", \"method\": \"get_driver_properties\", \"params\": {\"driver_name\": \"redfish\", \"context\": {}}}",
+		// 	},
+		// }
+		// // Make a POST request to the JSON-RPC port
+		// readinessProbe.Exec = &corev1.ExecAction{
+		// 	Command: []string{
+		// 		"/usr/bin/curl", "-v", "-X", "POST", "localhost:8089", "-d",
+		// 		"{\"jsonrpc\": \"2.0\", \"method\": \"get_driver_properties\", \"params\": {\"driver_name\": \"redfish\", \"context\": {}}}",
+		// 	},
+		// }
 		livenessProbe.Exec = &corev1.ExecAction{
 			Command: []string{
-				"/usr/bin/curl", "-v", "-X", "POST", "localhost:8089", "-d",
-				"{\"jsonrpc\": \"2.0\", \"method\": \"get_driver_properties\", \"params\": {\"driver_name\": \"redfish\", \"context\": {}}}",
+				"/bin/true",
 			},
 		}
-		// Make a POST request to the JSON-RPC port
+
 		readinessProbe.Exec = &corev1.ExecAction{
 			Command: []string{
-				"/usr/bin/curl", "-v", "-X", "POST", "localhost:8089", "-d",
-				"{\"jsonrpc\": \"2.0\", \"method\": \"get_driver_properties\", \"params\": {\"driver_name\": \"redfish\", \"context\": {}}}",
+				"/bin/true",
 			},
 		}
 		dnsmasqLivenessProbe.Exec = &corev1.ExecAction{

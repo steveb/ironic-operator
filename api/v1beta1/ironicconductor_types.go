@@ -44,6 +44,10 @@ type IronicConductorSpec struct {
 	PxeContainerImage string `json:"pxeContainerImage,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// TftpProxyContainerImage - Ironic TFTP proxy to run in the host network
+	TftpProxyContainerImage string `json:"tftpProxyContainerImage,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// ProvisioningInterface - Host network interface used by Ironic, TFTP, DHCP and HTTP
 	ProvisioningInterface string `json:"provisioningInterface,omitempty"`
 

@@ -345,6 +345,10 @@ spec:
                     description: 'Whether to deploy a single node standalone Ironic.
                       TODO: -> not implemented, always standalone for now'
                     type: boolean
+                  tftpProxyContainerImage:
+                    description: TftpProxyContainerImage - Ironic TFTP proxy to run
+                      in the host network
+                    type: string
                 type: object
               passwordSelectors:
                 description: PasswordSelectors - Selectors to identify the DB and
