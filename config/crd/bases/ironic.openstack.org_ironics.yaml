@@ -344,6 +344,10 @@ spec:
                     description: Whether to deploy a single node standalone Ironic.
                     type: boolean
                 type: object
+              namespace:
+                default: openstack
+                description: Namespace which resources will be created in.
+                type: string
               passwordSelectors:
                 description: PasswordSelectors - Selectors to identify the DB and
                   AdminUser password from the Secret
@@ -380,6 +384,7 @@ spec:
             required:
             - ironicAPI
             - ironicConductor
+            - namespace
             type: object
           status:
             description: IronicStatus defines the observed state of Ironic

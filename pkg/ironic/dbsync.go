@@ -52,7 +52,7 @@ func DbSyncJob(
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ServiceName + "-db-sync",
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.Namespace,
 			Labels:    labels,
 		},
 		Spec: batchv1.JobSpec{
