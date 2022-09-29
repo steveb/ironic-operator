@@ -31,6 +31,12 @@ const (
 
 // IronicSpec defines the desired state of Ironic
 type IronicSpec struct {
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=openstack
+	// Namespace which resources will be created in.
+	Namespace string `json:"namespace"`
+
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	// Whether to deploy a single node standalone Ironic.

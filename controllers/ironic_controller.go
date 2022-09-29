@@ -209,7 +209,7 @@ func (r *IronicReconciler) reconcileNormal(ctx context.Context, instance *ironic
 	//
 	// check for required OpenStack secret holding passwords for service/admin user and add hash to the vars map
 	//
-	ospSecret, hash, err := oko_secret.GetSecret(ctx, helper, instance.Spec.Secret, instance.Namespace)
+	ospSecret, hash, err := oko_secret.GetSecret(ctx, helper, instance.Spec.Secret, instance.Spec.Namespace)
 	if err != nil {
 		if k8s_errors.IsNotFound(err) {
 			instance.Status.Conditions.Set(condition.FalseCondition(
@@ -500,7 +500,7 @@ func (r *IronicReconciler) conductorDeploymentCreateOrUpdate(instance *ironicv1.
 	deployment := &ironicv1.IronicConductor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-conductor", instance.Name),
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.Namespace,
 		},
 	}
 
@@ -529,7 +529,7 @@ func (r *IronicReconciler) apiDeploymentCreateOrUpdate(instance *ironicv1.Ironic
 	deployment := &ironicv1.IronicAPI{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-api", instance.Name),
-			Namespace: instance.Namespace,
+			Namespace: instance.Spec.Namespace,
 		},
 	}
 
@@ -582,7 +582,7 @@ func (r *IronicReconciler) generateServiceConfigMaps(
 		customData[key] = data
 	}
 
-	keystoneAPI, err := keystonev1.GetKeystoneAPI(ctx, h, instance.Namespace, map[string]string{})
+	keystoneAPI, err := keystonev1.GetKeystoneAPI(ctx, h, instance.Spec.Namespace, map[string]string{})
 	if err != nil {
 		return err
 	}
@@ -601,7 +601,7 @@ func (r *IronicReconciler) generateServiceConfigMaps(
 		// ScriptsConfigMap
 		{
 			Name:               fmt.Sprintf("%s-scripts", instance.Name),
-			Namespace:          instance.Namespace,
+			Namespace:          instance.Spec.Namespace,
 			Type:               util.TemplateTypeScripts,
 			InstanceType:       instance.Kind,
 			AdditionalTemplate: map[string]string{"common.sh": "/common/common.sh"},
@@ -610,7 +610,7 @@ func (r *IronicReconciler) generateServiceConfigMaps(
 		// ConfigMap
 		{
 			Name:          fmt.Sprintf("%s-config-data", instance.Name),
-			Namespace:     instance.Namespace,
+			Namespace:     instance.Spec.Namespace,
 			Type:          util.TemplateTypeConfig,
 			InstanceType:  instance.Kind,
 			CustomData:    customData,
