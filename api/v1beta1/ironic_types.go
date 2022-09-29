@@ -158,6 +158,7 @@ type IronicStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=ironics,scope=Cluster
 
 // Ironic is the Schema for the ironics API
 type Ironic struct {

@@ -38,9 +38,9 @@ spec:
   installModes:
   - supported: true
     type: OwnNamespace
-  - supported: true
-    type: SingleNamespace
   - supported: false
+    type: SingleNamespace
+  - supported: true
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
