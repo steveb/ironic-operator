@@ -55,6 +55,12 @@ type IronicConductorSpec struct {
 	// Replicas - Ironic Conductor Replicas
 	Replicas int32 `json:"replicas"`
 
+	// +kubebuilder:validation:Required
+	// MariaDB instance name.
+	// Right now required by the maridb-operator to get the credentials from the instance to create the DB.
+	// Might not be required in future.
+	DatabaseInstance string `json:"databaseInstance,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	// DatabaseHostname - Ironic Database Hostname
 	DatabaseHostname string `json:"databaseHostname,omitempty"`
@@ -88,6 +94,11 @@ type IronicConductorSpec struct {
 	Debug IronicDebug `json:"debug,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=true
+	// PreserveJobs - do not delete jobs after they finished e.g. to check logs
+	PreserveJobs bool `json:"preserveJobs,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default="# add your customization here"
 	// CustomServiceConfig - customize the service config using this parameter to change service defaults,
 	// or overwrite rendered information using raw OpenStack config format. The content gets added to
@@ -113,6 +124,9 @@ type IronicConductorStatus struct {
 
 	// Conditions
 	Conditions condition.Conditions `json:"conditions,omitempty" optional:"true"`
+
+	// Ironic Database Hostname
+	DatabaseHostname string `json:"databaseHostname,omitempty"`
 
 	// ReadyCount of ironic Conductor instances
 	ReadyCount int32 `json:"readyCount,omitempty"`

@@ -217,6 +217,11 @@ spec:
                   databaseHostname:
                     description: DatabaseHostname - Ironic Database Hostname
                     type: string
+                  databaseInstance:
+                    description: MariaDB instance name. Right now required by the
+                      maridb-operator to get the credentials from the instance to
+                      create the DB. Might not be required in future.
+                    type: string
                   databaseUser:
                     default: ironic
                     description: 'DatabaseUser - optional username used for ironic
@@ -290,6 +295,11 @@ spec:
                           in mariadb-operator'
                         type: string
                     type: object
+                  preserveJobs:
+                    default: true
+                    description: PreserveJobs - do not delete jobs after they finished
+                      e.g. to check logs
+                    type: boolean
                   provisioningInterface:
                     description: ProvisioningInterface - Host network interface used
                       by Ironic, TFTP, DHCP and HTTP

@@ -266,7 +266,7 @@ func StatefulSet(
 		statefulset.Spec.Template.Spec.NodeSelector = instance.Spec.NodeSelector
 	}
 
-	initContainerDetails := ironic.APIDetails{
+	initContainerDetails := APIDetails{
 		ContainerImage:       instance.Spec.ContainerImage,
 		PxeContainerImage:    instance.Spec.PxeContainerImage,
 		DatabaseHost:         instance.Spec.DatabaseHostname,
@@ -278,7 +278,7 @@ func StatefulSet(
 		VolumeMounts:         GetInitVolumeMounts(),
 		PxeInit:              true,
 	}
-	statefulset.Spec.Template.Spec.InitContainers = ironic.InitContainer(initContainerDetails)
+	statefulset.Spec.Template.Spec.InitContainers = InitContainer(initContainerDetails)
 
 	return statefulset
 }

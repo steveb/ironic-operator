@@ -18,6 +18,7 @@ package ironicapi
 import (
 	ironicv1 "github.com/openstack-k8s-operators/ironic-operator/api/v1beta1"
 	ironic "github.com/openstack-k8s-operators/ironic-operator/pkg/ironic"
+	ironicconductor "github.com/openstack-k8s-operators/ironic-operator/pkg/ironicconductor"
 	common "github.com/openstack-k8s-operators/lib-common/modules/common"
 	affinity "github.com/openstack-k8s-operators/lib-common/modules/common/affinity"
 	env "github.com/openstack-k8s-operators/lib-common/modules/common/env"
@@ -142,7 +143,7 @@ func Deployment(
 		deployment.Spec.Template.Spec.NodeSelector = instance.Spec.NodeSelector
 	}
 
-	initContainerDetails := ironic.APIDetails{
+	initContainerDetails := ironicconductor.APIDetails{
 		ContainerImage:       instance.Spec.ContainerImage,
 		DatabaseHost:         instance.Spec.DatabaseHostname,
 		DatabaseUser:         instance.Spec.DatabaseUser,
@@ -153,7 +154,7 @@ func Deployment(
 		VolumeMounts:         GetInitVolumeMounts(),
 		PxeInit:              false,
 	}
-	deployment.Spec.Template.Spec.InitContainers = ironic.InitContainer(initContainerDetails)
+	deployment.Spec.Template.Spec.InitContainers = ironicconductor.InitContainer(initContainerDetails)
 
 	return deployment
 }

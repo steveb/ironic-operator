@@ -24,6 +24,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -39,17 +40,20 @@ import (
 	ironicv1 "github.com/openstack-k8s-operators/ironic-operator/api/v1beta1"
 	ironic "github.com/openstack-k8s-operators/ironic-operator/pkg/ironic"
 	ironicconductor "github.com/openstack-k8s-operators/ironic-operator/pkg/ironicconductor"
+	mariadbv1 "github.com/openstack-k8s-operators/mariadb-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/condition"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/configmap"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
+	"github.com/openstack-k8s-operators/lib-common/modules/common/job"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/labels"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/route"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/secret"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/service"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/statefulset"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/util"
+	"github.com/openstack-k8s-operators/lib-common/modules/database"
 )
 
 // GetClient -
@@ -221,8 +225,8 @@ func (r *IronicConductorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ironicv1.IronicConductor{}).
-		// TODO(sbaker), how to handle optional Owns? Standalone Ironic doesn't own a KeystoneService
-		// Owns(&keystonev1.KeystoneService{}).
+		Owns(&mariadbv1.MariaDBDatabase{}).
+		Owns(&batchv1.Job{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&corev1.Secret{}).
 		Owns(&routev1.Route{}).
@@ -328,6 +332,124 @@ func (r *IronicConductorReconciler) reconcileServices(
 	return ctrl.Result{}, nil
 }
 
+func (r *IronicConductorReconciler) reconcileInit(
+	ctx context.Context,
+	instance *ironicv1.IronicConductor,
+	helper *helper.Helper,
+) (ctrl.Result, error) {
+	r.Log.Info("Reconciling Service init")
+
+	serviceLabels := map[string]string{
+		common.AppSelector: ironic.ServiceName,
+	}
+
+	//
+	// create service DB instance
+	//
+	db := database.NewDatabase(
+		ironic.DatabaseName,
+		instance.Spec.DatabaseUser,
+		instance.Spec.Secret,
+		map[string]string{
+			"dbName": instance.Spec.DatabaseInstance,
+		},
+	)
+	// create or patch the DB
+	ctrlResult, err := db.CreateOrPatchDB(
+		ctx,
+		helper,
+	)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.DBReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	if (ctrlResult != ctrl.Result{}) {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			condition.DBReadyRunningMessage))
+		return ctrlResult, nil
+	}
+
+	// wait for the DB to be setup
+	ctrlResult, err = db.WaitForDBCreated(ctx, helper)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.DBReadyErrorMessage,
+			err.Error()))
+		return ctrlResult, err
+	}
+	if (ctrlResult != ctrl.Result{}) {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			condition.DBReadyRunningMessage))
+		return ctrlResult, nil
+	}
+	// update Status.DatabaseHostname, used to bootstrap/config the service
+	instance.Status.DatabaseHostname = db.GetDatabaseHostname()
+	instance.Status.Conditions.MarkTrue(condition.DBReadyCondition, condition.DBReadyMessage)
+
+	// create service DB - end
+
+	//
+	// run ironic db sync
+	//
+	dbSyncHash := instance.Status.Hash[ironicv1.DbSyncHash]
+	jobDef := ironicconductor.DbSyncJob(instance, serviceLabels)
+	dbSyncjob := job.NewJob(
+		jobDef,
+		ironicv1.DbSyncHash,
+		instance.Spec.PreserveJobs,
+		5,
+		dbSyncHash,
+	)
+	ctrlResult, err = dbSyncjob.DoJob(
+		ctx,
+		helper,
+	)
+	if (ctrlResult != ctrl.Result{}) {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBSyncReadyCondition,
+			condition.RequestedReason,
+			condition.SeverityInfo,
+			condition.DBSyncReadyRunningMessage))
+		return ctrlResult, nil
+	}
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			condition.DBSyncReadyCondition,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			condition.DBSyncReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
+	}
+	if dbSyncjob.HasChanged() {
+		instance.Status.Hash[ironicv1.DbSyncHash] = dbSyncjob.GetHash()
+		if err := r.Client.Status().Update(ctx, instance); err != nil {
+			return ctrl.Result{}, err
+		}
+		r.Log.Info(fmt.Sprintf("Job %s hash added - %s", jobDef.Name, instance.Status.Hash[ironicv1.DbSyncHash]))
+	}
+	instance.Status.Conditions.MarkTrue(condition.DBSyncReadyCondition, condition.DBSyncReadyMessage)
+
+	// run ironic db sync - end
+
+	r.Log.Info("Reconciled Service init successfully")
+	return ctrl.Result{}, nil
+}
+
 func (r *IronicConductorReconciler) reconcileNormal(ctx context.Context, instance *ironicv1.IronicConductor, helper *helper.Helper) (ctrl.Result, error) {
 	r.Log.Info("Reconciling Service")
 
@@ -364,6 +486,14 @@ func (r *IronicConductorReconciler) reconcileNormal(ctx context.Context, instanc
 	}
 	configMapVars[ospSecret.Name] = env.SetValue(hash)
 	// run check OpenStack secret - end
+
+	// Handle service init
+	ctrlResult, err := r.reconcileInit(ctx, instance, helper)
+	if err != nil {
+		return ctrlResult, err
+	} else if (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, nil
+	}
 
 	//
 	// check for required Ironic config maps that should have been created by parent Ironic CR
@@ -438,7 +568,7 @@ func (r *IronicConductorReconciler) reconcileNormal(ctx context.Context, instanc
 	//
 
 	// Handle service update
-	ctrlResult, err := r.reconcileUpdate(ctx, instance, helper)
+	ctrlResult, err = r.reconcileUpdate(ctx, instance, helper)
 	if err != nil {
 		return ctrlResult, err
 	} else if (ctrlResult != ctrl.Result{}) {

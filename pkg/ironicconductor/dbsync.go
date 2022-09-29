@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ironic
+package ironicconductor
 
 import (
 	ironicv1 "github.com/openstack-k8s-operators/ironic-operator/api/v1beta1"
 
+	ironic "github.com/openstack-k8s-operators/ironic-operator/pkg/ironic"
 	common "github.com/openstack-k8s-operators/lib-common/modules/common"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
 	batchv1 "k8s.io/api/batch/v1"
@@ -32,7 +33,7 @@ const (
 
 // DbSyncJob func
 func DbSyncJob(
-	instance *ironicv1.Ironic,
+	instance *ironicv1.IronicConductor,
 	labels map[string]string,
 ) *batchv1.Job {
 	runAsUser := int64(0)
@@ -45,29 +46,29 @@ func DbSyncJob(
 	}
 
 	envVars := map[string]env.Setter{}
-	envVars["KOLLA_CONFIG_FILE"] = env.SetValue(KollaConfigDbSync)
+	envVars["KOLLA_CONFIG_FILE"] = env.SetValue(ironic.KollaConfigDbSync)
 	envVars["KOLLA_CONFIG_STRATEGY"] = env.SetValue("COPY_ALWAYS")
 	envVars["KOLLA_BOOTSTRAP"] = env.SetValue("true")
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ServiceName + "-db-sync",
-			Namespace: instance.Spec.Namespace,
+			Name:      ironic.ServiceName + "-db-sync",
+			Namespace: instance.Namespace,
 			Labels:    labels,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy:      "OnFailure",
-					ServiceAccountName: ServiceAccount,
+					ServiceAccountName: ironic.ServiceAccount,
 					Containers: []corev1.Container{
 						{
-							Name: ServiceName + "-db-sync",
+							Name: ironic.ServiceName + "-db-sync",
 							Command: []string{
 								"/bin/bash",
 							},
 							Args:  args,
-							Image: instance.Spec.IronicAPI.ContainerImage,
+							Image: instance.Spec.ContainerImage,
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: &runAsUser,
 							},
@@ -80,13 +81,13 @@ func DbSyncJob(
 		},
 	}
 
-	job.Spec.Template.Spec.Volumes = GetVolumes(ServiceName)
+	job.Spec.Template.Spec.Volumes = ironic.GetVolumes(ironic.ServiceName)
 
 	initContainerDetails := APIDetails{
-		ContainerImage:       instance.Spec.IronicAPI.ContainerImage,
+		ContainerImage:       instance.Spec.ContainerImage,
 		DatabaseHost:         instance.Status.DatabaseHostname,
 		DatabaseUser:         instance.Spec.DatabaseUser,
-		DatabaseName:         DatabaseName,
+		DatabaseName:         ironic.DatabaseName,
 		OSPSecret:            instance.Spec.Secret,
 		DBPasswordSelector:   instance.Spec.PasswordSelectors.Database,
 		UserPasswordSelector: instance.Spec.PasswordSelectors.Service,

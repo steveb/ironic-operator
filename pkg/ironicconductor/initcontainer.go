@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package ironic
+package ironicconductor
 
 import (
 	"github.com/openstack-k8s-operators/lib-common/modules/common/env"
