@@ -106,3 +106,16 @@ replace sigs.k8s.io/structured-merge-diff/v4 v4.2.2 => sigs.k8s.io/structured-me
 // 3. execute go mod tidy command. After done these, go will auto replace the dev in go.mod to a suitiable pseudo-version.
 // replace github.com/openstack-k8s-operators/lib-common => github.com/<account>/lib-common v0.0.0-20220610121238-abedf5879ca4
 // replace github.com/openstack-k8s-operators/lib-common => /path/to/local/repo
+
+replace (
+	github.com/openstack-k8s-operators/lib-common => github.com/steveb/lib-common v0.0.0-20221002220942-a040fb74f50c
+	github.com/openstack-k8s-operators/lib-common/modules/common => github.com/steveb/lib-common/modules/common v0.0.0-20221002220942-a040fb74f50c
+	github.com/openstack-k8s-operators/lib-common/modules/database => github.com/steveb/lib-common/modules/database v0.0.0-20221002220942-a040fb74f50c
+	github.com/openstack-k8s-operators/lib-common/modules/openstack => github.com/steveb/lib-common/modules/openstack v0.0.0-20221002220942-a040fb74f50c
+)
+
+//replace (
+//	github.com/openstack-k8s-operators/lib-common/modules/common => ../lib-common/modules/common
+//	github.com/openstack-k8s-operators/lib-common/modules/database => ../lib-common/modules/database
+//	github.com/openstack-k8s-operators/lib-common/modules/openstack => ../lib-common/modules/openstack
+//)

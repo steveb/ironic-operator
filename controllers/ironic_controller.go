@@ -372,14 +372,17 @@ func (r *IronicReconciler) reconcileInit(
 	//
 	// create service DB instance
 	//
-	db := database.NewDatabase(
+	db := database.NewDatabaseWithNamespace(
 		instance.Name,
 		instance.Spec.DatabaseUser,
 		instance.Spec.Secret,
 		map[string]string{
 			"dbName": instance.Spec.DatabaseInstance,
 		},
+		ironic.ServiceName,
+		instance.Spec.Namespace,
 	)
+
 	// create or patch the DB
 	ctrlResult, err := db.CreateOrPatchDB(
 		ctx,
