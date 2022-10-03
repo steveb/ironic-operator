@@ -28,6 +28,9 @@ const (
 
 	// IronicConductorReadyCondition Status=True condition which indicates if the IronicConductor is configured and operational
 	IronicConductorReadyCondition condition.Type = "IronicConductorReady"
+
+	// IronicHostNetworkPodsReadyCondiction Status=True condition which indicates host network pods are operational
+	IronicHostNetworkPodsReadyCondiction condition.Type = "IronicHostNetworkPods"
 )
 
 //
@@ -56,4 +59,13 @@ const (
 
 	// IronicConductorReadyErrorMessage
 	IronicConductorReadyErrorMessage = "IronicConductor error occured %s"
+
+	//
+	// IronicHostNetworkPodsReady condition messages
+	//
+	// IronicHostNetworkPodsReadyInitMessage
+	IronicHostNetworkPodsReadyInitMessage = "Ironic host network pods not started"
+
+	// IronicHostNetworkPodsReadyErrorMessage
+	IronicHostNetworkPodsReadyErrorMessage = "Ironic host network pods error occured %s"
 )

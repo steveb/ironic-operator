@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	ironic "github.com/openstack-k8s-operators/ironic-operator/pkg/ironic"
+	ironicconductor "github.com/openstack-k8s-operators/ironic-operator/pkg/ironicconductor"
 
 	common "github.com/openstack-k8s-operators/lib-common/modules/common"
 	condition "github.com/openstack-k8s-operators/lib-common/modules/common/condition"
@@ -71,6 +72,7 @@ type IronicReconciler struct {
 // +kubebuilder:rbac:groups=ironic.openstack.org,resources=ironicconductors/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;create;update;patch;delete;watch
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;create;update;patch;delete;watch
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;create;update;patch;delete;watch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;create;update;patch;delete;watch
 // +kubebuilder:rbac:groups=mariadb.openstack.org,resources=mariadbdatabases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=keystone.openstack.org,resources=keystoneapis,verbs=get;list;watch
@@ -175,6 +177,7 @@ func (r *IronicReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&ironicv1.IronicAPI{}).
 		Owns(&mariadbv1.MariaDBDatabase{}).
 		Owns(&batchv1.Job{}).
+		Owns(&corev1.Pod{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Complete(r)
@@ -319,7 +322,7 @@ func (r *IronicReconciler) reconcileNormal(ctx context.Context, instance *ironic
 		return ctrl.Result{}, err
 	}
 	if op != controllerutil.OperationResultNone {
-		r.Log.Info(fmt.Sprintf("Deployment %s successfully reconciled - operation: %s", instance.Name, string(op)))
+		r.Log.Info(fmt.Sprintf("Conductor %s successfully reconciled - operation: %s", instance.Name, string(op)))
 	}
 	// Mirror IronicConductor status' ReadyCount to this parent CR
 	// instance.Status.ServiceIDs = ironicConductor.Status.ServiceIDs
@@ -343,7 +346,18 @@ func (r *IronicReconciler) reconcileNormal(ctx context.Context, instance *ironic
 		return ctrl.Result{}, err
 	}
 	if op != controllerutil.OperationResultNone {
-		r.Log.Info(fmt.Sprintf("Deployment %s successfully reconciled - operation: %s", instance.Name, string(op)))
+		r.Log.Info(fmt.Sprintf("API %s successfully reconciled - operation: %s", instance.Name, string(op)))
+	}
+
+	_, err = r.hostNetPodCreateOrUpdate(ctx, instance, helper)
+	if err != nil {
+		instance.Status.Conditions.Set(condition.FalseCondition(
+			ironicv1.IronicHostNetworkPodsReadyCondiction,
+			condition.ErrorReason,
+			condition.SeverityWarning,
+			ironicv1.IronicHostNetworkPodsReadyErrorMessage,
+			err.Error()))
+		return ctrl.Result{}, err
 	}
 
 	// Mirror IronicAPI status' APIEndpoints and ReadyCount to this parent CR
@@ -496,6 +510,52 @@ func (r *IronicReconciler) reconcileUpgrade(ctx context.Context, instance *ironi
 	// -delete dbsync hash from status to rerun it?
 
 	r.Log.Info("Reconciled Ironic upgrade successfully")
+	return ctrl.Result{}, nil
+}
+
+func (r *IronicReconciler) hostNetPodCreateOrUpdate(
+	ctx context.Context,
+	instance *ironicv1.Ironic,
+	helper *helper.Helper,
+) (ctrl.Result, error) {
+
+	r.Log.Info("Reconciling host network pods")
+	serviceLabels := map[string]string{
+		common.AppSelector:       ironic.ServiceName,
+		ironic.ComponentSelector: ironic.ProvisionComponent,
+	}
+	serviceList, err := ironicconductor.ProvisionServices(ctx, instance.Spec.Namespace, helper, serviceLabels)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	for _, conductorService := range serviceList.Items {
+		r.Log.Info(fmt.Sprintf("Reconciling host network pod for service %s on node %s", conductorService.Name, conductorService.Labels[ironic.NodeName]))
+		// Create the host network pod to proxy in DHCP, TFTP to the conductor pod
+		hostNetPod := ironic.HostNetPod(instance, &conductorService)
+		op, err := controllerutil.CreateOrPatch(ctx, r.Client, hostNetPod, func() error {
+			err := controllerutil.SetControllerReference(instance, hostNetPod, r.Scheme)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+
+		if err != nil {
+			//FIXME: error conditions
+			return ctrl.Result{}, err
+		}
+
+		if op != controllerutil.OperationResultNone {
+			util.LogForObject(
+				helper,
+				fmt.Sprintf("Pod %s successfully reconciled - operation: %s", hostNetPod.Name, string(op)),
+				instance,
+			)
+			return ctrl.Result{}, nil
+		}
+	}
+	r.Log.Info("Host network pods successfully reconciled")
 	return ctrl.Result{}, nil
 }
 

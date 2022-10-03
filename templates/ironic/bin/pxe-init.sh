@@ -36,3 +36,5 @@ for dir in httpboot httpboot/tftpboot; do
     cp /boot/efi/EFI/$efi_dir/shimx64.efi      /var/lib/ironic/$dir/bootx64.efi
     cp /boot/efi/EFI/$efi_dir/grubx64.efi      /var/lib/ironic/$dir/grubx64.efi
 done
+# Ensure all files are readable
+chmod -R +r /var/lib/ironic/httpboot

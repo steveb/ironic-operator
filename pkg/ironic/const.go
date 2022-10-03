@@ -34,14 +34,20 @@ const (
 	KollaConfigDbSync = "/var/lib/config-data/merged/db-sync-config.json"
 	// ComponentSelector - used by operators to specify pod labels
 	ComponentSelector = "component"
+	// NodeName -
+	NodeName = "nodeName"
 	// ConductorComponent -
 	ConductorComponent = "conductor"
+	// ProvisionComponent -
+	ProvisionComponent = "provision"
 	// HttpbootComponent -
 	HttpbootComponent = "httpboot"
 	// JSONRPCComponent -
 	JSONRPCComponent = "jsonrpc"
 	// DhcpComponent -
 	DhcpComponent = "dhcp"
+	// HostNetComponent -
+	HostNetComponent = "host-net"
 	// APIComponent -
 	APIComponent = "api"
 )

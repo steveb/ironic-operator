@@ -182,6 +182,10 @@ spec:
                 default: false
                 description: Whether to deploy a single node standalone Ironic.
                 type: boolean
+              tftpProxyContainerImage:
+                description: TftpProxyContainerImage - Ironic TFTP proxy to run in
+                  the host network
+                type: string
             type: object
           status:
             description: IronicConductorStatus defines the observed state of IronicConductor

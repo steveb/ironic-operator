@@ -254,32 +254,50 @@ func (r *IronicConductorReconciler) reconcileServices(
 ) (ctrl.Result, error) {
 	r.Log.Info("Reconciling Conductor init")
 
-	podList, err := ironicconductor.ConductorPods(ctx, instance, helper, serviceLabels)
+	podList, err := ironicconductor.ConductorPods(ctx, instance.Namespace, helper, serviceLabels)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
 	for _, conductorPod := range podList.Items {
-		externalIPs, hasExternalIP := instance.Spec.NodeProvisioningAddresses[conductorPod.Spec.NodeName]
+		externalIPs := instance.Spec.NodeProvisioningAddresses[conductorPod.Spec.NodeName]
 		r.Log.Info(fmt.Sprintf("Reconciling Service for conductor pod %s on node %s", conductorPod.Name, conductorPod.Spec.NodeName))
-		if !hasExternalIP {
-			r.Log.Info(fmt.Sprintf("No NodeProvisioningAddresses found for node %s, provisioning services won't be exposed", conductorPod.Spec.NodeName))
-			continue
-		}
+		// if !hasExternalIP {
+		// 	r.Log.Info(fmt.Sprintf("No NodeProvisioningAddresses found for node %s, provisioning services won't be exposed", conductorPod.Spec.NodeName))
+		// 	continue
+		// }
 
 		//
 		// Create the conductor pod service if none exists
 		//
-		conductorServiceLabels := map[string]string{
+		internalServiceLabels := map[string]string{
 			common.AppSelector:       ironic.ServiceName,
-			ironic.ComponentSelector: ironic.ConductorComponent,
+			ironic.ComponentSelector: ironic.JSONRPCComponent,
+			ironic.NodeName:          conductorPod.Spec.NodeName,
 		}
-		svc := service.NewService(
-			ironicconductor.Service(conductorPod.Name, instance, conductorServiceLabels, externalIPs),
-			conductorServiceLabels,
+		internalService := service.NewService(
+			ironicconductor.InternalService(conductorPod.Name, instance, internalServiceLabels),
+			internalServiceLabels,
 			5,
 		)
-		ctrlResult, err := svc.CreateOrPatch(ctx, helper)
+		ctrlResult, err := internalService.CreateOrPatch(ctx, helper)
+		if err != nil {
+			return ctrl.Result{}, err
+		} else if (ctrlResult != ctrl.Result{}) {
+			return ctrl.Result{}, nil
+		}
+
+		provisionServiceLabels := map[string]string{
+			common.AppSelector:       ironic.ServiceName,
+			ironic.ComponentSelector: ironic.ProvisionComponent,
+			ironic.NodeName:          conductorPod.Spec.NodeName,
+		}
+		provisionService := service.NewService(
+			ironicconductor.ProvisionService(conductorPod.Name, instance, provisionServiceLabels, externalIPs),
+			provisionServiceLabels,
+			5,
+		)
+		ctrlResult, err = provisionService.CreateOrPatch(ctx, helper)
 		if err != nil {
 			return ctrl.Result{}, err
 		} else if (ctrlResult != ctrl.Result{}) {
@@ -287,26 +305,14 @@ func (r *IronicConductorReconciler) reconcileServices(
 		}
 		// create service - end
 
-		// Create the conductor pod routes
-		httpbootRoute := route.NewRoute(
-			ironicconductor.HttpbootRoute(conductorPod.Name, instance, serviceLabels),
-			conductorServiceLabels,
+		// Create the conductor pod route
+		provisionRoute := route.NewRoute(
+			ironicconductor.ProvisionRoute(conductorPod.Name, instance, provisionServiceLabels),
+			provisionServiceLabels,
 			5,
 		)
 
-		ctrlResult, err = httpbootRoute.CreateOrPatch(ctx, helper)
-		if err != nil {
-			return ctrl.Result{}, err
-		} else if (ctrlResult != ctrl.Result{}) {
-			return ctrl.Result{}, nil
-		}
-		dhcpRoute := route.NewRoute(
-			ironicconductor.DhcpRoute(conductorPod.Name, instance, serviceLabels),
-			conductorServiceLabels,
-			5,
-		)
-
-		ctrlResult, err = dhcpRoute.CreateOrPatch(ctx, helper)
+		ctrlResult, err = provisionRoute.CreateOrPatch(ctx, helper)
 		if err != nil {
 			return ctrl.Result{}, err
 		} else if (ctrlResult != ctrl.Result{}) {

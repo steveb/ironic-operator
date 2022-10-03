@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -22,17 +21,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s_labels "k8s.io/apimachinery/pkg/labels"
 
-	ironicv1 "github.com/openstack-k8s-operators/ironic-operator/api/v1beta1"
 	"github.com/openstack-k8s-operators/lib-common/modules/common/helper"
 )
 
 // ConductorPods - Query current running ironic-conductor pods managed by the statefulset
 func ConductorPods(
 	ctx context.Context,
-	instance *ironicv1.IronicConductor,
+	namespace string,
 	helper *helper.Helper,
 	serviceLabels map[string]string,
 ) (*corev1.PodList, error) {
 	podSelectorString := k8s_labels.Set(serviceLabels).String()
-	return helper.GetKClient().CoreV1().Pods(instance.Namespace).List(ctx, metav1.ListOptions{LabelSelector: podSelectorString})
+	return helper.GetKClient().CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: podSelectorString})
 }

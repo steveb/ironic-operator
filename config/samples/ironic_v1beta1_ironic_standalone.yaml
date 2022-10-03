@@ -25,4 +25,5 @@ spec:
     #  node3:
     #    - 172.22.0.3
     pxeContainerImage: quay.io/tripleomastercentos9/openstack-ironic-pxe:current-tripleo
+    tftpProxyContainerImage: quay.io/steveb/tftpget2http:main-latest
   secret: ironic-secret
