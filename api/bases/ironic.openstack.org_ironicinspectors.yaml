@@ -352,6 +352,9 @@ spec:
                   - type
                   type: object
                 type: array
+              containerImage:
+                description: ContainerImage - Current Ironic Inspector Container Image
+                type: string
               databaseHostname:
                 description: IronicInspector Database Hostname
                 type: string
@@ -367,6 +370,10 @@ spec:
                   type: array
                 description: NetworkAttachments status of the deployment pods
                 type: object
+              pxeContainerImage:
+                description: PxeContainerImage - Current Ironic Inspector DHCP/TFTP/HTTP
+                  Container Image
+                type: string
               readyCount:
                 description: ReadyCount of Ironic Inspector instances
                 format: int32

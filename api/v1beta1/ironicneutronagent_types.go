@@ -108,6 +108,10 @@ type IronicNeutronAgentStatus struct {
 
 	// TransportURLSecret - Secret containing RabbitMQ transportURL
 	TransportURLSecret string `json:"transportURLSecret,omitempty"`
+
+	// ContainerImage - Current ML2 baremtal - Ironic Neutron Agent Image
+	ContainerImage string `json:"containerImage"`
+
 }
 
 //+kubebuilder:object:root=true

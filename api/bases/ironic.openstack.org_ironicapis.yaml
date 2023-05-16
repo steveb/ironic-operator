@@ -293,6 +293,9 @@ spec:
                   - type
                   type: object
                 type: array
+              containerImage:
+                description: ContainerImage - Current Ironic API Container Image
+                type: string
               hash:
                 additionalProperties:
                   type: string

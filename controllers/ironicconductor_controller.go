@@ -132,6 +132,9 @@ func (r *IronicConductorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		// update the overall status condition if service is ready
 		if instance.IsReady() {
 			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
+			// store current image for determining update behaviour
+			instance.Status.ContainerImage = instance.Spec.ContainerImage
+			instance.Status.PxeContainerImage = instance.Spec.PxeContainerImage
 		}
 
 		err := helper.PatchInstance(ctx, instance)

@@ -150,6 +150,12 @@ type IronicConductorStatus struct {
 
 	// NetworkAttachments status of the deployment pods
 	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
+
+	// ContainerImage - Current Ironic Conductor Container Image
+	ContainerImage string `json:"containerImage,omitempty"`
+
+	// PxeContainerImage - Current Ironic DHCP/TFTP/HTTP Container Image
+	PxeContainerImage string `json:"pxeContainerImage,omitempty"`
 }
 
 //+kubebuilder:object:root=true

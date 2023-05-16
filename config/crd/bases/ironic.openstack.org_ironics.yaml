@@ -1027,6 +1027,30 @@ spec:
                   type: string
                 description: Map of hashes to track e.g. job status
                 type: object
+              images:
+                description: Images - Current container images for all ironic services
+                properties:
+                  api:
+                    description: API - Ironic API Container Image (will be set to
+                      environmental default if empty)
+                    type: string
+                  conductor:
+                    description: Conductor - Ironic Conductor Container Image (will
+                      be set to environmental default if empty)
+                    type: string
+                  inspector:
+                    description: Inspector - Ironic Inspector Container Image (will
+                      be set to environmental default if empty)
+                    type: string
+                  neutronAgent:
+                    description: NeutronAgent - ML2 baremtal - Ironic Neutron Agent
+                      Image (will be set to environmental default if empty)
+                    type: string
+                  pxe:
+                    description: Pxe- Ironic DHCP/TFTP/HTTP Container Image URL (will
+                      be set to environmental default if empty)
+                    type: string
+                type: object
               ironicAPIReadyCount:
                 description: ReadyCount of Ironic API instance
                 format: int32

@@ -138,8 +138,10 @@ func (r *IronicInspectorReconciler) Reconcile(
 			instance.Status.Conditions.MarkTrue(
 				condition.ReadyCondition,
 				condition.ReadyMessage)
+			// store current image for determining update behaviour
+			instance.Status.ContainerImage = instance.Spec.ContainerImage
+			instance.Status.PxeContainerImage = instance.Spec.PxeContainerImage
 		}
-
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
 			_err = err

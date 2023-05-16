@@ -165,6 +165,12 @@ type IronicInspectorStatus struct {
 
 	// NetworkAttachments status of the deployment pods
 	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
+
+	// ContainerImage - Current Ironic Inspector Container Image
+	ContainerImage string `json:"containerImage,omitempty"`
+
+	// PxeContainerImage - Current Ironic Inspector DHCP/TFTP/HTTP Container Image
+	PxeContainerImage string `json:"pxeContainerImage,omitempty"`
 }
 
 //+kubebuilder:object:root=true

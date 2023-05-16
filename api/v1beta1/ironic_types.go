@@ -239,6 +239,9 @@ type IronicStatus struct {
 
 	// TransportURLSecret - Secret containing RabbitMQ transportURL
 	TransportURLSecret string `json:"transportURLSecret,omitempty"`
+
+	// Images - Current container images for all ironic services
+	Images IronicImages `json:"images,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -160,6 +160,10 @@ type IronicAPIStatus struct {
 
 	// NetworkAttachments status of the deployment pods
 	NetworkAttachments map[string][]string `json:"networkAttachments,omitempty"`
+
+	// ContainerImage - Current Ironic API Container Image
+	ContainerImage string `json:"containerImage,omitempty"`
+
 }
 
 //+kubebuilder:object:root=true

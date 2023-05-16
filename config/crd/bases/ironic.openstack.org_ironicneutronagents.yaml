@@ -212,6 +212,10 @@ spec:
                   - type
                   type: object
                 type: array
+              containerImage:
+                description: ContainerImage - Current ML2 baremtal - Ironic Neutron
+                  Agent Image
+                type: string
               hash:
                 additionalProperties:
                   type: string
@@ -224,6 +228,8 @@ spec:
               transportURLSecret:
                 description: TransportURLSecret - Secret containing RabbitMQ transportURL
                 type: string
+            required:
+            - containerImage
             type: object
         type: object
     served: true

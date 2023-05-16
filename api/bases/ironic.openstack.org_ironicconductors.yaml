@@ -303,6 +303,9 @@ spec:
                   - type
                   type: object
                 type: array
+              containerImage:
+                description: ContainerImage - Current Ironic Conductor Container Image
+                type: string
               hash:
                 additionalProperties:
                   type: string
@@ -315,6 +318,10 @@ spec:
                   type: array
                 description: NetworkAttachments status of the deployment pods
                 type: object
+              pxeContainerImage:
+                description: PxeContainerImage - Current Ironic DHCP/TFTP/HTTP Container
+                  Image
+                type: string
               readyCount:
                 description: ReadyCount of ironic Conductor instances
                 format: int32
