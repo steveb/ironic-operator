@@ -135,9 +135,9 @@ func (r *IronicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res
 		// update the overall status condition if service is ready
 		if instance.IsReady() {
 			instance.Status.Conditions.MarkTrue(condition.ReadyCondition, condition.ReadyMessage)
-			// store current images for determining update behaviour
-			instance.Status.Images = instance.Spec.Images
 		}
+		// store image status for future updates
+		instance.Status.Images = instance.Spec.Images
 
 		err := helper.PatchInstance(ctx, instance)
 		if err != nil {
@@ -688,7 +688,7 @@ func (r *IronicReconciler) reconcileInit(
 		jobDef,
 		ironicv1.DbSyncHash,
 		instance.Spec.PreserveJobs,
-		5,
+		time.Duration(2)*time.Second,
 		dbSyncHash,
 	)
 	ctrlResult, err = dbSyncjob.DoJob(
@@ -768,6 +768,12 @@ func (r *IronicReconciler) conductorDeploymentCreateOrUpdate(
 		deployment.Spec.TransportURLSecret = instance.Status.TransportURLSecret
 		deployment.Spec.KeystoneVars = keystoneVars
 		deployment.Spec.ServiceAccount = instance.RbacResourceName()
+		if instance.Spec.Images.Conductor != instance.Status.Images.Conductor {
+			deployment.Spec.ContainerImage = instance.Spec.Images.Conductor
+		}
+		if instance.Spec.Images.Pxe != instance.Status.Images.Pxe {
+			deployment.Spec.PxeContainerImage = instance.Spec.Images.Pxe
+		}
 
 		err := controllerutil.SetControllerReference(instance, deployment, r.Scheme)
 		if err != nil {
@@ -795,6 +801,9 @@ func (r *IronicReconciler) apiDeploymentCreateOrUpdate(instance *ironicv1.Ironic
 		deployment.Spec.DatabaseHostname = instance.Status.DatabaseHostname
 		deployment.Spec.TransportURLSecret = instance.Status.TransportURLSecret
 		deployment.Spec.ServiceAccount = instance.RbacResourceName()
+		if instance.Spec.Images.API != instance.Status.Images.API {
+			deployment.Spec.ContainerImage = instance.Spec.Images.API
+		}
 
 		err := controllerutil.SetControllerReference(instance, deployment, r.Scheme)
 		if err != nil {
@@ -916,6 +925,12 @@ func (r *IronicReconciler) inspectorDeploymentCreateOrUpdate(
 		context.TODO(), r.Client, deployment, func() error {
 			deployment.Spec = instance.Spec.IronicInspector
 			deployment.Spec.ServiceAccount = instance.RbacResourceName()
+			if instance.Spec.Images.Inspector != instance.Status.Images.Inspector {
+				deployment.Spec.ContainerImage = instance.Spec.Images.Inspector
+			}
+			if instance.Spec.Images.Pxe != instance.Status.Images.Pxe {
+				deployment.Spec.PxeContainerImage = instance.Spec.Images.Pxe
+			}
 			err := controllerutil.SetControllerReference(
 				instance, deployment, r.Scheme)
 			if err != nil {
@@ -976,6 +991,9 @@ func (r *IronicReconciler) ironicNeutronAgentDeploymentCreateOrUpdate(
 		context.TODO(), r.Client, deployment, func() error {
 			deployment.Spec = instance.Spec.IronicNeutronAgent
 			deployment.Spec.ServiceAccount = instance.RbacResourceName()
+			if instance.Spec.Images.NeutronAgent != instance.Status.Images.NeutronAgent {
+				deployment.Spec.ContainerImage = instance.Spec.Images.NeutronAgent
+			}
 			err := controllerutil.SetControllerReference(
 				instance, deployment, r.Scheme)
 			if err != nil {
