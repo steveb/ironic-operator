@@ -67,7 +67,7 @@ func DbSyncJob(
 								"/bin/bash",
 							},
 							Args:  args,
-							Image: instance.Spec.IronicAPI.ContainerImage,
+							Image: instance.Spec.Images.API,
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: &runAsUser,
 							},
