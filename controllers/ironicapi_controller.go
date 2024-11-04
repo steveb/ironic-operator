@@ -1005,6 +1005,7 @@ func (r *IronicAPIReconciler) generateServiceConfigMaps(
 			endptConfig["SSLCertificateFile"] = fmt.Sprintf("/etc/pki/tls/certs/%s.crt", endpt.String())
 			endptConfig["SSLCertificateKeyFile"] = fmt.Sprintf("/etc/pki/tls/private/%s.key", endpt.String())
 		}
+		endptConfig["Timeout"] = instance.Spec.APITimeout
 		httpdVhostConfig[endpt.String()] = endptConfig
 	}
 	templateParameters["VHosts"] = httpdVhostConfig

@@ -105,6 +105,12 @@ type IronicAPISpec struct {
 	// +kubebuilder:validation:Optional
 	// KeystoneEndpoints - Internally used Keystone API endpoints
 	KeystoneEndpoints KeystoneEndpoints `json:"keystoneEndpoints"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=120
+	// +kubebuilder:validation:Minimum=1
+	// APITimeout for HAProxy, Apache
+	APITimeout int `json:"apiTimeout"`
 }
 
 // IronicAPIStatus defines the observed state of IronicAPI
