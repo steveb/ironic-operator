@@ -935,7 +935,7 @@ func (r *IronicInspectorReconciler) reconcileNormal(
 
 	if ironicv1.GetOwningIronicName(instance) == "" {
 		// Service account, role, binding
-		rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, getCommonRbacRules())
+		rbacResult, err := common_rbac.ReconcileRbac(ctx, helper, instance, getPrivilegedRbacRules())
 		if err != nil {
 			return rbacResult, err
 		} else if (rbacResult != ctrl.Result{}) {
